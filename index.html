@@ -307,9 +307,9 @@
   <div class="left-col">
     <div class="profile" id="profile"></div>
     <div class="info-box">
-      <div class="blk" contenteditable="true" data-ph="소개 문구">이곳에는 성향글, 계정설명, ng를<br>넣어주세요</div>
+      <div class="blk" contenteditable="true" data-ph="소개 문구">닉네임</div>
       <hr class="sep">
-      <div class="blk" contenteditable="true" data-ph="문구"><span class="tx c1">닉네임</span> 소개를 적어주세요<br>불러줬으면 하는 <span class="tx c1">호칭</span><br>계정 설명</div>
+      <div class="blk" contenteditable="true" data-ph="문구">간단한 소개를 적어주세요<br>계정 설명, 연령, 성향 등등</div>
       <div class="blk" contenteditable="true" data-ph="문구">NG · 지뢰 사항을<br>적어주세요</div>
       <div class="blk" contenteditable="true" data-ph="문구">문의 · 연락 안내를<br>적어주세요</div>
     </div>
@@ -916,10 +916,10 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
 /* ══════════════════════════════════════════════
    10. 초기 내용 — 올려주신 이미지 그대로
    ══════════════════════════════════════════════ */
-addLegend('c1', '이 색이 뜻하는 것을<br>적어주세요');
-addLegend('c2', '색깔별 설명을<br>적어주세요');
+addLegend('c1', '최애');
+addLegend('c2', 'NG');
 
-addSection('[분류명]', [
+addSection('<span class="hl c1">[분류명]</span>', [
   '여기에는 캐릭터, 페어, 장르를 넣어주세요',
   '작품명 / 장르 - <span class="hl c1">캐릭터명</span>',
   '작품명 / 장르 - <span class="hl c2">캐릭터명</span>'
@@ -929,21 +929,21 @@ addSection('Loading...☆★', ['안내 문구를 적어주세요']);
 addChar({
   pos:'tl',
   tags:'#태그를<br>#적어주세요',
-  src:'[출처]',
+  src:'[최애]',
   desc:'작품명 - <span class="hl c1">캐릭터명</span>',
   note:'(메모)'
 });
 addChar({
   pos:'br',
   tags:'#태그를<br>#적어주세요',
-  src:'[출처]',
+  src:'[최애커플]',
   desc:'작품명 - <span class="hl c2">캐릭터명</span>',
   note:''
 });
 addChar({
   pos:'tr',
   tags:'#태그를<br>#적어주세요',
-  src:'[출처]',
+  src:'[최근관심사]',
   desc:'작품명 - <span class="hl c1">캐릭터명</span>',
   note:''
 });
