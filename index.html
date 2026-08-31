@@ -293,11 +293,11 @@
   <div class="left-col">
     <div class="profile" id="profile"></div>
     <div class="info-box">
-      <div class="blk" contenteditable="true" data-ph="소개 문구">반이입 극온리 드림러<br>사담 + 꾸금롤플 계정</div>
+      <div class="blk" contenteditable="true" data-ph="소개 문구">이곳에는 성향글, 계정설명, ng를<br>넣어주세요</div>
       <hr class="sep">
-      <div class="blk" contenteditable="true" data-ph="문구"><span class="tx c1">푸름</span>의 요양 삐계입니다...<br><span class="tx c1">포도</span>라고 불러주세요.<br>원래 닉 언급X</div>
-      <div class="blk" contenteditable="true" data-ph="문구">겹드피할려고 만든<br>계정인만큼 보이면<br>언급없이 정리해요ㅜㅜ</div>
-      <div class="blk" contenteditable="true" data-ph="문구">배려리스트 변경필요하면<br>연락주시길 바랍니다!</div>
+      <div class="blk" contenteditable="true" data-ph="문구"><span class="tx c1">닉네임</span> 소개를 적어주세요<br>불러줬으면 하는 <span class="tx c1">호칭</span><br>계정 설명</div>
+      <div class="blk" contenteditable="true" data-ph="문구">NG · 지뢰 사항을<br>적어주세요</div>
+      <div class="blk" contenteditable="true" data-ph="문구">문의 · 연락 안내를<br>적어주세요</div>
     </div>
   </div>
 
@@ -871,36 +871,35 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
 /* ══════════════════════════════════════════════
    10. 초기 내용 — 올려주신 이미지 그대로
    ══════════════════════════════════════════════ */
-addLegend('c1', '메인 드림');
-addLegend('c2', '탐라 내는 괜찮지만<br>그 외는 놀랄수있음');
+addLegend('c1', '이 색이 뜻하는 것을<br>적어주세요');
+addLegend('c2', '색깔별 설명을<br>적어주세요');
 
-addSection('[크랙]', [
-  '오빠 좀 도와줘!/어서 오세요 동생님/턴오버 - <span class="hl c1">안주한</span>',
-  '퍼펙트게임/가을의 사인 - <span class="hl c1">아오야마 이쿠토</span>',
-  '개처럼 칼처럼/THEMIS 출격실화 : 가이드 급구 - <span class="hl c1">카즈마/넬</span>',
-  'never/and. - <span class="hl c1">네버 스웨디</span>, 플린 벨 스웨디'
+addSection('[분류명]', [
+  '여기에는 캐릭터, 페어, 장르를 넣어주세요',
+  '작품명 / 장르 - <span class="hl c1">캐릭터명</span>',
+  '작품명 / 장르 - <span class="hl c2">캐릭터명</span>'
 ]);
-addSection('Loading...☆★', ['배려리스트에 그때 그때 수정해서 올리는 중...']);
+addSection('Loading...☆★', ['안내 문구를 적어주세요']);
 
 addChar({
   pos:'tl',
-  tags:'#과묵연하<br>#보호욕 #삐짐<br>#호위기사<br>(전 전쟁노예)',
-  src:'[크랙]',
-  desc:'사랑아니면죽음뿐 - <span class="hl c1">이안</span>',
-  note:'(찍먹중)'
+  tags:'#태그를<br>#적어주세요',
+  src:'[출처]',
+  desc:'작품명 - <span class="hl c1">캐릭터명</span>',
+  note:'(메모)'
 });
 addChar({
   pos:'br',
-  tags:'#능글연하^^<br>#누님~<br>#괴이브튜버',
-  src:'[로판ai]',
-  desc:'1246님 - <span class="hl c2">츠카하라 케이</span>',
+  tags:'#태그를<br>#적어주세요',
+  src:'[출처]',
+  desc:'작품명 - <span class="hl c2">캐릭터명</span>',
   note:''
 });
 addChar({
   pos:'tr',
-  tags:'#쾌남^^<br>#아이돌오타쿠<br>#굿즈지하돌',
-  src:'[베이비챗]',
-  desc:'검다단님 - <span class="hl c2">아마기 슌</span>',
+  tags:'#태그를<br>#적어주세요',
+  src:'[출처]',
+  desc:'작품명 - <span class="hl c1">캐릭터명</span>',
   note:''
 });
 
