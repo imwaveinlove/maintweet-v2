@@ -163,16 +163,27 @@
   }
   .card-ui{position:absolute; top:0; right:2px; display:none; gap:4px; z-index:6;}
   .char:hover .card-ui{display:flex;}
+  /* 태그 상자: 네 귀퉁이 기본 위치 + ✥ 손잡이로 자유롭게 옮길 수 있음 */
+  .char .tagbox{position:absolute; z-index:4; max-width:132px;}
+  .char .tagbox[data-pos="tl"]{top:4px; left:0;}
+  .char .tagbox[data-pos="tr"]{top:4px; right:0;}
+  .char .tagbox[data-pos="bl"]{top:122px; left:4px;}
+  .char .tagbox[data-pos="br"]{top:122px; right:4px;}
+  .char .tagbox[data-pos="tl"] .tags,
+  .char .tagbox[data-pos="bl"] .tags{text-align:left;}
+  .char .tagbox[data-pos="tr"] .tags,
+  .char .tagbox[data-pos="br"] .tags{text-align:right;}
   .char .tags{
-    position:absolute; font-family:'Galmuri11',monospace; font-size:11px; line-height:1.55;
-    max-width:128px; z-index:4;
+    font-family:'Galmuri11',monospace; font-size:11px; line-height:1.55; min-width:56px;
   }
-  .char .tags[data-pos="tl"]{top:4px; left:0; text-align:left;}
-  .char .tags[data-pos="tr"]{top:4px; right:0; text-align:right;}
-  .char .tags[data-pos="bl"]{top:122px; left:4px; text-align:left;}
-  .char .tags[data-pos="br"]{top:122px; right:4px; text-align:right;}
+  .tag-grip{
+    position:absolute; top:-9px; left:-11px; width:16px; height:16px; border-radius:4px;
+    background:#7cb0e8; color:#fff; font-size:9px; line-height:16px; text-align:center;
+    cursor:move; display:none; z-index:8; font-family:'Galmuri11',monospace;
+  }
+  .char:hover .tag-grip{display:block;}
   .avatar{
-    width:150px; height:150px; border-radius:50%; overflow:hidden; position:relative;
+    width:150px; height:150px; border-radius:16px; overflow:hidden; position:relative;
     background:#f2f7fe; flex:0 0 150px;
   }
   .char .meta{margin-top:12px; text-align:center; width:100%;}
@@ -190,7 +201,12 @@
     position:absolute; top:50%; left:50%; max-width:none;
     user-select:none; -webkit-user-drag:none; pointer-events:none;
   }
-  .fr-ui{position:absolute; top:5px; right:5px; display:none; gap:3px; z-index:7;}
+  /* 프레임이 원형이면 overflow:hidden 때문에 모서리에 둔 버튼이 잘려 안 보인다.
+     항상 프레임 안쪽 아래 가운데에 둬서 어떤 모양이든 보이고 눌리게 함 */
+  .fr-ui{
+    position:absolute; left:50%; bottom:8px; transform:translateX(-50%);
+    display:none; gap:4px; z-index:7;
+  }
   .frame:hover .fr-ui{display:flex;}
 
   /* ───────── 스티커 ───────── */
@@ -281,7 +297,8 @@
 </div>
 <div class="hint">
   글자는 클릭해서 바로 고치면 되고, 드래그로 선택하면 색칠 툴바가 뜹니다<br>
-  사진은 드래그로 위치 이동 / 휠로 확대·축소 · 스티커는 왼쪽 위 ✥ 손잡이(또는 Alt+드래그)로 옮깁니다
+  사진은 드래그로 위치 이동 / 휠로 확대·축소 / <b>더블클릭하면 다른 사진으로 교체</b><br>
+  태그 상자와 스티커는 왼쪽 위 ✥ 손잡이를 끌어서 옮깁니다
 </div>
 
 <!-- ══════════ 스테이지 ══════════ -->
@@ -471,6 +488,10 @@ function makeFrame(frameEl, phText){
   frameEl.addEventListener('click', e => {
     if (!img && !e.target.closest('.fr-ui')) input.click();
   });
+  /* 사진이 이미 있을 때는 클릭이 위치 조절(드래그)이라 겹치지 않게 더블클릭으로 교체 */
+  frameEl.addEventListener('dblclick', e => {
+    if (!e.target.closest('.fr-ui')) input.click();
+  });
 
   /* 드래그 이동 */
   let dragging = false, sx = 0, sy = 0, ox = 0, oy = 0;
@@ -584,7 +605,10 @@ function addChar(data){
   const card = document.createElement('div');
   card.className = 'char';
   card.innerHTML =
-    '<div class="tags" data-pos="' + (data.pos || 'tl') + '" contenteditable="true" data-ph="#태그"></div>' +
+    '<div class="tagbox" data-pos="' + (data.pos || 'tl') + '">' +
+      '<div class="tag-grip ui-only" title="드래그해서 옮기기">✥</div>' +
+      '<div class="tags" contenteditable="true" data-ph="#태그"></div>' +
+    '</div>' +
     '<div class="avatar"></div>' +
     '<div class="meta">' +
       '<div class="src"  contenteditable="true" data-ph="[출처]"></div>' +
@@ -613,11 +637,34 @@ function addChar(data){
     if (a === 'left'  && card.previousElementSibling) chars.insertBefore(card, card.previousElementSibling);
     if (a === 'right' && card.nextElementSibling)     chars.insertBefore(card.nextElementSibling, card);
     if (a === 'pos') {
-      const tags = card.querySelector('.tags');
-      const i = TAG_POS.indexOf(tags.dataset.pos);
-      tags.dataset.pos = TAG_POS[(i+1) % TAG_POS.length];
+      /* 손으로 옮겨 둔 위치를 지우고 다시 네 귀퉁이 기본값으로 돌림 */
+      box.style.left = box.style.top = box.style.right = box.style.bottom = '';
+      const i = TAG_POS.indexOf(box.dataset.pos);
+      box.dataset.pos = TAG_POS[(i+1) % TAG_POS.length];
     }
   });
+
+  /* 태그 상자 자유 이동 (왼쪽 위 ✥ 손잡이) */
+  const box  = card.querySelector('.tagbox');
+  const grip = box.querySelector('.tag-grip');
+  let tg = false, gx = 0, gy = 0, gl = 0, gt = 0;
+  grip.addEventListener('mousedown', e => {
+    tg = true;
+    gx = e.clientX; gy = e.clientY;
+    gl = box.offsetLeft; gt = box.offsetTop;
+    box.style.left = gl + 'px';
+    box.style.top  = gt + 'px';
+    box.style.right = 'auto'; box.style.bottom = 'auto';
+    e.preventDefault(); e.stopPropagation();
+  });
+  window.addEventListener('mousemove', e => {
+    if (!tg) return;
+    const z = curZoom();
+    box.style.left = (gl + (e.clientX - gx) / z) + 'px';
+    box.style.top  = (gt + (e.clientY - gy) / z) + 'px';
+  });
+  window.addEventListener('mouseup', () => { tg = false; });
+
   return card;
 }
 
