@@ -80,6 +80,8 @@
   .stage.capturing [contenteditable]:hover,
   .stage.capturing [contenteditable]:focus{background:transparent;}
   .stage.capturing .ui-only{display:none !important;}
+  /* 비워둔 칸의 안내 문구(문구/내용을 입력하세요…)가 저장 이미지에 찍히지 않게 */
+  .stage.capturing [contenteditable]:empty:before{content:"";}
   .stage.capturing .frame.empty{border-color:transparent; background:transparent;}
   .stage.capturing .frame.empty .ph{display:none;}
 
@@ -100,9 +102,13 @@
     width:100%; background:#ffffff;
     border:2px dashed #a9c8ea; border-radius:4px; padding:26px 20px; text-align:center;
   }
-  .info-box .sep{border:0; border-top:1px solid #bcd4ee; margin:16px 6px;}
-  .info-box .blk{margin:0 0 16px;}
-  .info-box .blk:last-child{margin-bottom:0;}
+  .info-box .sep{border:0; border-top:1px solid #bcd4ee; margin:0 6px;}
+  .info-box .blk{margin:0;}
+  /* 칸·구분선마다 지우기 버튼을 띄우기 위해 한 겹 감쌈 */
+  #infoItems > div{position:relative; margin-bottom:16px;}
+  #infoItems > div:last-child{margin-bottom:0;}
+  #infoItems .row-ui{position:absolute; top:-4px; right:-8px; display:none;}
+  #infoItems > div:hover .row-ui{display:flex;}
 
   /* ───────── 창 ───────── */
   .win{
@@ -298,11 +304,11 @@
   <div class="left-col">
     <div class="profile" id="profile"></div>
     <div class="info-box">
-      <div class="blk" contenteditable="true" data-ph="소개 문구">닉네임</div>
-      <hr class="sep">
-      <div class="blk" contenteditable="true" data-ph="문구">간단한 소개를 적어주세요<br>계정 설명, 연령, 성향 등등</div>
-      <div class="blk" contenteditable="true" data-ph="문구">NG · 지뢰 사항을<br>적어주세요</div>
-      <div class="blk" contenteditable="true" data-ph="문구">문의 · 연락 안내를<br>적어주세요</div>
+      <div id="infoItems"></div>
+      <div class="adder ui-only" style="margin-top:14px;">
+        <button class="mini" id="addBlkBtn" type="button">＋ 칸</button>
+        <button class="mini" id="addSepBtn" type="button">＋ 구분선</button>
+      </div>
     </div>
   </div>
 
@@ -521,6 +527,29 @@ function makeFrame(frameEl, phText){
 
   return frameEl;
 }
+
+/* ══════════════════════════════════════════════
+   1-2. 왼쪽 소개표 (칸 · 구분선 추가/삭제)
+   ══════════════════════════════════════════════ */
+const infoItems = document.getElementById('infoItems');
+const DEL_UI = '<div class="row-ui ui-only"><button class="mini" type="button">✕</button></div>';
+
+function addInfoItem(inner, html){
+  const wrap = document.createElement('div');
+  wrap.innerHTML = inner + DEL_UI;
+  const blk = wrap.querySelector('.blk');
+  if (blk) blk.innerHTML = html || '';
+  wrap.querySelector('.row-ui').addEventListener('click', () => wrap.remove());
+  infoItems.appendChild(wrap);
+  return wrap;
+}
+const addBlk = html => addInfoItem('<div class="blk" contenteditable="true" data-ph="문구"></div>', html);
+const addSep = ()   => addInfoItem('<hr class="sep">');
+
+document.getElementById('addBlkBtn').addEventListener('click', () => {
+  addBlk('').querySelector('.blk').focus();
+});
+document.getElementById('addSepBtn').addEventListener('click', () => addSep());
 
 /* ══════════════════════════════════════════════
    2. 범례
@@ -894,6 +923,12 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
 /* ══════════════════════════════════════════════
    10. 초기 내용 — 올려주신 이미지 그대로
    ══════════════════════════════════════════════ */
+addBlk('닉네임');
+addSep();
+addBlk('간단한 소개를 적어주세요<br>계정 설명, 연령, 성향 등등');
+addBlk('NG · 지뢰 사항을<br>적어주세요');
+addBlk('문의 · 연락 안내를<br>적어주세요');
+
 addLegend('c1', '최애');
 addLegend('c2', 'NG');
 
