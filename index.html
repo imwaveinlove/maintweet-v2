@@ -116,15 +116,19 @@
     background:#fff; box-shadow:3px 3px 0 rgba(124,176,232,0.20); overflow:hidden;
   }
   .win-bar{
-    display:flex; align-items:center; gap:14px; padding:9px 14px;
+    display:flex; align-items:center; gap:15px; padding:8px 14px;
     background:var(--bar-top); border-bottom:2px solid var(--line);
-    color:var(--line); font-size:14px; letter-spacing:5px;
   }
   .win-foot{
-    display:flex; align-items:center; justify-content:flex-end; gap:16px;
-    padding:9px 16px; background:var(--bar-bot);
-    border-top:2px solid var(--line); color:var(--line); font-size:14px; letter-spacing:5px;
+    display:flex; align-items:center; justify-content:flex-end; gap:18px;
+    padding:8px 16px; background:var(--bar-bot);
+    border-top:2px solid var(--line);
   }
+  /* 창 위·아래 아이콘: 글자가 아니라 그림이라 편집되지 않음.
+     색은 applyColors()에서 창선 색으로 직접 칠해준다 (html2canvas가
+     SVG를 따로 그려서 currentColor를 물려받지 못하기 때문) */
+  .ic{width:20px; height:20px; display:block; flex:0 0 auto; user-select:none;}
+  .win-foot .ic{width:21px; height:21px;}
   .win-body{padding:18px 26px 22px;}
 
   /* 범례 */
@@ -314,7 +318,24 @@
 
   <!-- 오른쪽 창 -->
   <div class="win">
-    <div class="win-bar" contenteditable="true" data-ph="아이콘">✕ ⟳ ⧉ ≋</div>
+    <div class="win-bar">
+      <svg class="ic" viewBox="0 0 24 24"><!-- 닫기 -->
+        <path data-s="1" fill="none" stroke-width="2.8" stroke-linecap="round" d="M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4"/>
+      </svg>
+      <svg class="ic" viewBox="0 0 24 24"><!-- 새로고침 -->
+        <path data-s="1" fill="none" stroke-width="2.4" stroke-linecap="round" d="M19.6 13.6A7.7 7.7 0 1 1 17.2 6.8"/>
+        <path data-f="1" d="M18.0 2.7l1.6 5.5-5.5-1.1z"/>
+      </svg>
+      <svg class="ic" viewBox="0 0 24 24"><!-- 폴더 -->
+        <path data-s="1" fill="none" stroke-width="2" stroke-linejoin="round"
+              d="M3.2 7.4A1.6 1.6 0 0 1 4.8 5.8h3.9l1.9 2.2h8.6a1.6 1.6 0 0 1 1.6 1.6v7.8a1.6 1.6 0 0 1-1.6 1.6H4.8a1.6 1.6 0 0 1-1.6-1.6V7.4z"/>
+      </svg>
+      <svg class="ic" viewBox="0 0 24 24"><!-- 피드 -->
+        <circle data-f="1" cx="5.8" cy="18.2" r="2.2"/>
+        <path data-s="1" fill="none" stroke-width="2.3" stroke-linecap="round" d="M4 11.4a8.8 8.8 0 0 1 8.8 8.8"/>
+        <path data-s="1" fill="none" stroke-width="2.3" stroke-linecap="round" d="M4 5.2a15 15 0 0 1 15 15"/>
+      </svg>
+    </div>
 
     <div class="win-body">
       <!-- 범례 -->
@@ -348,7 +369,18 @@
       </div>
     </div>
 
-    <div class="win-foot" contenteditable="true" data-ph="아이콘">✎ ✿ ⌂</div>
+    <div class="win-foot">
+      <svg class="ic" viewBox="0 0 24 24"><!-- 붓 -->
+        <path data-f="1" d="M20.9 3.1a2.1 2.1 0 0 0-2.9 0l-7.6 7.6 2.9 2.9 7.6-7.6a2.1 2.1 0 0 0 0-2.9z"/>
+        <path data-f="1" d="M9.5 11.9l2.6 2.6-3.3 3.3a4.9 4.9 0 0 1-3.5 1.4H2.9l1-2.7c.2-.6.6-1.2 1-1.7l4.6-2.9z"/>
+      </svg>
+      <svg class="ic" viewBox="0 0 24 24"><!-- 새 -->
+        <path data-f="1" d="M21.6 5.3c-.7.3-1.5.6-2.3.7.8-.5 1.5-1.3 1.8-2.3-.8.5-1.7.8-2.6 1a4 4 0 0 0-6.9 3.7C8.4 8.2 5.4 6.5 3.3 3.8a4 4 0 0 0 1.2 5.4c-.6 0-1.2-.2-1.8-.5a4 4 0 0 0 3.2 3.9c-.5.2-1.1.2-1.7.1a4 4 0 0 0 3.7 2.8 8 8 0 0 1-5.9 1.7 11.3 11.3 0 0 0 6.1 1.8c7.4 0 11.4-6.1 11.4-11.4v-.5c.8-.6 1.5-1.3 2.1-2.2z"/>
+      </svg>
+      <svg class="ic" viewBox="0 0 24 24"><!-- 홈 -->
+        <path data-f="1" d="M12 3 2.4 11a1.1 1.1 0 0 0 1.4 1.6l.6-.5v7.4c0 .6.5 1.1 1.1 1.1h13c.6 0 1.1-.5 1.1-1.1v-7.4l.6.5A1.1 1.1 0 0 0 21.6 11L12 3zm2.1 15.9H9.9v-4.3c0-.4.3-.8.8-.8h2.6c.5 0 .8.4.8.8v4.3z"/>
+      </svg>
+    </div>
   </div>
 
 </div>
@@ -836,6 +868,13 @@ function applyColors(){
     root.style.setProperty('--' + k + 't', darken(pickers[k].value, 0.6));
   });
   stage.style.backgroundImage = dotsBg(pickers.dot.value);
+
+  /* 창 위·아래 아이콘 색. html2canvas는 SVG를 별도 이미지로 그려서
+     currentColor를 물려받지 못하므로 fill/stroke를 값으로 직접 박아 둔다 */
+  document.querySelectorAll('.ic *').forEach(el => {
+    if (el.dataset.f) el.setAttribute('fill',   pickers.line.value);
+    if (el.dataset.s) el.setAttribute('stroke', pickers.line.value);
+  });
 }
 Object.values(pickers).forEach(p => p.addEventListener('input', applyColors));
 
