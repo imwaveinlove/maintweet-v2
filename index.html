@@ -22,8 +22,8 @@
     --c2:#c5b0ec;  --c2t:#6f5aa0;   /* 색 2 (보라) */
     --c3:#f7c3d8;  --c3t:#b06a8b;   /* 색 3 (분홍) */
     /* 창 상·하단 바 그라데이션 — 창선 색에서 자동으로 만들어짐 (applyColors) */
-    --bar-top:linear-gradient(120deg, rgba(124,176,232,0.02), rgba(124,176,232,0.06) 28%, rgba(124,176,232,0.55));
-    --bar-bot:linear-gradient(120deg, rgba(124,176,232,0.55), rgba(124,176,232,0.06) 72%, rgba(124,176,232,0.02));
+    --bar-top:linear-gradient(180deg, rgba(124,176,232,0.55), rgba(124,176,232,0.08) 75%, rgba(124,176,232,0.02));
+    --bar-bot:linear-gradient(180deg, rgba(124,176,232,0.55), rgba(124,176,232,0.08) 75%, rgba(124,176,232,0.02));
     --font:'Galmuri14';
   }
   *{box-sizing:border-box;}
@@ -55,6 +55,7 @@
     width:30px; height:24px; padding:0; border:1px solid #b9d3f0;
     border-radius:5px; background:#fff; cursor:pointer;
   }
+  input[type=range]{width:74px; accent-color:#7cb0e8; cursor:pointer;}
   select{
     font-family:inherit; font-size:11px; padding:5px 6px; color:#3f4d5e;
     border:1px solid #b9d3f0; border-radius:6px; background:#fff;
@@ -267,6 +268,7 @@
   <div class="grp">
     <label>배경</label><input type="color" id="cBg" value="#eef4fd">
     <label>도트</label><input type="color" id="cDot" value="#c9dcf6">
+    <input type="range" id="dotSize" min="2" max="14" step="0.5" value="6.5" title="도트 크기">
     <label>창선</label><input type="color" id="cLine" value="#7cb0e8">
     <label>글자</label><input type="color" id="cInk" value="#3f4d5e">
   </div>
@@ -426,20 +428,22 @@ function darken(hex, k){
   const f = v => Math.max(0, Math.round(v*k));
   return `rgb(${f(r)},${f(g)},${f(b)})`;
 }
-/* 배경 물방울 무늬: html2canvas가 확실히 그려주도록 SVG를 배경 이미지로 사용 */
-function dotsBg(color){
-  const c = encodeURIComponent(color);
-  const svg =
-    "<svg xmlns='http://www.w3.org/2000/svg' width='96' height='96'>" +
-    "<circle cx='13' cy='15' r='4.5' fill='" + color + "'/>" +
-    "<circle cx='37' cy='33' r='4.5' fill='" + color + "'/>" +
-    "<circle cx='66' cy='11' r='4.5' fill='" + color + "'/>" +
-    "<circle cx='86' cy='36' r='4.5' fill='" + color + "'/>" +
-    "<circle cx='21' cy='62' r='4.5' fill='" + color + "'/>" +
-    "<circle cx='49' cy='77' r='4.5' fill='" + color + "'/>" +
-    "<circle cx='76' cy='63' r='4.5' fill='" + color + "'/>" +
-    "<circle cx='92' cy='88' r='4.5' fill='" + color + "'/>" +
-    "</svg>";
+/* 배경 물방울 무늬: html2canvas가 확실히 그려주도록 SVG를 배경 이미지로 사용.
+   위치는 타일 비율로 잡고, 반지름만큼 안쪽으로 밀어넣어 크게 키워도 잘리지 않게 함 */
+const DOT_TILE = 110;
+const DOT_PTS = [
+  [0.14,0.16],[0.40,0.33],[0.68,0.12],[0.90,0.38],
+  [0.22,0.62],[0.50,0.80],[0.74,0.60],[0.95,0.90]
+];
+function dotsBg(color, r){
+  const T = DOT_TILE;
+  const clamp = v => Math.min(Math.max(v, r), T - r).toFixed(1);
+  const circles = DOT_PTS
+    .map(p => "<circle cx='" + clamp(p[0]*T) + "' cy='" + clamp(p[1]*T) +
+              "' r='" + r + "' fill='" + color + "'/>")
+    .join('');
+  const svg = "<svg xmlns='http://www.w3.org/2000/svg' width='" + T +
+              "' height='" + T + "'>" + circles + "</svg>";
   return 'url("data:image/svg+xml,' + encodeURIComponent(svg) + '")';
 }
 
@@ -855,19 +859,18 @@ function applyColors(){
   root.style.setProperty('--line', pickers.line.value);
   root.style.setProperty('--ink',  pickers.ink.value);
 
-  /* 창 상·하단 바: 아이콘이 놓인 쪽(상단=왼쪽, 하단=오른쪽)이 흰색으로 빠지고
-     반대쪽 끝에서 창선 색이 진해지는 그라데이션. 위아래가 서로 대칭이 됨 */
+  /* 창 상·하단 바: 위가 창선 색으로 진하고 아래로 갈수록 밝아지는 세로 그라데이션.
+     두 바 모두 같은 방향이라 창이 위에서 빛을 받는 것처럼 보임 */
   const L = hexToRgb(pickers.line.value);
   const t = a => `rgba(${L.r},${L.g},${L.b},${a})`;
-  root.style.setProperty('--bar-top',
-    `linear-gradient(120deg, ${t(0.02)}, ${t(0.06)} 28%, ${t(0.55)})`);
-  root.style.setProperty('--bar-bot',
-    `linear-gradient(120deg, ${t(0.55)}, ${t(0.06)} 72%, ${t(0.02)})`);
+  const bar = `linear-gradient(180deg, ${t(0.55)}, ${t(0.08)} 75%, ${t(0.02)})`;
+  root.style.setProperty('--bar-top', bar);
+  root.style.setProperty('--bar-bot', bar);
   ['c1','c2','c3'].forEach(k => {
     root.style.setProperty('--' + k, pickers[k].value);
     root.style.setProperty('--' + k + 't', darken(pickers[k].value, 0.6));
   });
-  stage.style.backgroundImage = dotsBg(pickers.dot.value);
+  stage.style.backgroundImage = dotsBg(pickers.dot.value, parseFloat(dotSize.value));
 
   /* 창 위·아래 아이콘 색. html2canvas는 SVG를 별도 이미지로 그려서
      currentColor를 물려받지 못하므로 fill/stroke를 값으로 직접 박아 둔다 */
@@ -876,10 +879,13 @@ function applyColors(){
     if (el.dataset.s) el.setAttribute('stroke', pickers.line.value);
   });
 }
+const dotSize = document.getElementById('dotSize');
 Object.values(pickers).forEach(p => p.addEventListener('input', applyColors));
+dotSize.addEventListener('input', applyColors);
 
 document.getElementById('resetBtn').addEventListener('click', () => {
   Object.keys(DEFAULTS).forEach(k => pickers[k].value = DEFAULTS[k]);
+  dotSize.value = '6.5';
   applyColors();
 });
 
