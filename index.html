@@ -17,6 +17,7 @@
     --bg:#eef4fd;
     --dot:#c9dcf6;
     --line:#7cb0e8;        /* 창 테두리 / 구분선 */
+    --line-soft:#b3d1f2;   /* 창선을 흰색 쪽으로 옅게 푼 색 — 점선 테두리용 (applyColors) */
     --ink:#3f4d5e;         /* 본문 글자색 */
     --c1:#a9d3f4;  --c1t:#4a7fa8;   /* 색 1 (파랑) */
     --c2:#c5b0ec;  --c2t:#6f5aa0;   /* 색 2 (보라) */
@@ -101,9 +102,9 @@
   }
   .info-box{
     width:100%; background:#ffffff;
-    border:2px dashed #a9c8ea; border-radius:4px; padding:26px 20px; text-align:center;
+    border:2px dashed var(--line-soft); border-radius:4px; padding:26px 20px; text-align:center;
   }
-  .info-box .sep{border:0; border-top:1px solid #bcd4ee; margin:0 6px;}
+  .info-box .sep{border:0; border-top:1px solid var(--line-soft); margin:0 6px;}
   .info-box .blk{margin:0;}
   /* 칸·구분선마다 지우기 버튼을 띄우기 위해 한 겹 감쌈 */
   #infoItems > div{position:relative; margin-bottom:16px;}
@@ -195,10 +196,10 @@
   .frame{cursor:grab; user-select:none;}
   .frame.dragging{cursor:grabbing;}
   .frame.empty{
-    border:2px dashed #a9c8ea; background:#f6faff; cursor:pointer;
+    border:2px dashed var(--line-soft); background:#f6faff; cursor:pointer;
     display:flex; align-items:center; justify-content:center;
   }
-  .frame.empty .ph{color:#9bb6d6; font-size:11px; font-family:'Galmuri11',monospace; text-align:center;}
+  .frame.empty .ph{color:var(--line-soft); font-size:11px; font-family:'Galmuri11',monospace; text-align:center;}
   .frame img{
     position:absolute; top:50%; left:50%; max-width:none;
     user-select:none; -webkit-user-drag:none; pointer-events:none;
@@ -861,6 +862,11 @@ function applyColors(){
      두 바 모두 같은 방향이라 창이 위에서 빛을 받는 것처럼 보임 */
   const L = hexToRgb(pickers.line.value);
   const t = a => `rgba(${L.r},${L.g},${L.b},${a})`;
+
+  /* 점선 테두리(왼쪽 소개표 / 오른쪽 이미지 칸)는 창선을 흰색 쪽으로 옅게 푼 색.
+     창선을 그대로 쓰면 점선이 창 테두리만큼 진해져 시선을 뺏는다 */
+  root.style.setProperty('--line-soft',
+    `rgb(${Math.round(L.r + (255-L.r)*0.42)},${Math.round(L.g + (255-L.g)*0.42)},${Math.round(L.b + (255-L.b)*0.42)})`);
   const bar = `linear-gradient(180deg, ${t(0.55)}, ${t(0.08)} 75%, ${t(0.02)})`;
   root.style.setProperty('--bar-top', bar);
   root.style.setProperty('--bar-bot', bar);
