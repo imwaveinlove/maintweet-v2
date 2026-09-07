@@ -82,6 +82,9 @@
   .stage.capturing [contenteditable]:hover,
   .stage.capturing [contenteditable]:focus{background:transparent;}
   .stage.capturing .ui-only{display:none !important;}
+  /* 저장할 때는 편집용 버튼들이 사라져 내용이 짧아지는데, min-height 900px이 남아
+     아래쪽에 빈 배경이 길게 붙었다. 저장 시에는 내용 높이에 맞춰 잘리게 함 */
+  .stage.capturing{min-height:0;}
   /* 비워둔 칸의 안내 문구(문구/내용을 입력하세요…)가 저장 이미지에 찍히지 않게 */
   .stage.capturing [contenteditable]:empty:before{content:"";}
   .stage.capturing .frame.empty{border-color:transparent; background:transparent;}
