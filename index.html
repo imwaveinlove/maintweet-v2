@@ -52,6 +52,9 @@
   }
   button:hover{background:#dbebff;}
   button.on{background:#7cb0e8; border-color:#7cb0e8; color:#fff;}
+  button.danger{background:#fff2f6; border-color:#f0bccb; color:#b0506e;}
+  button.danger:hover{background:#ffe4ec;}
+  .save-state{color:#8ea3c0; min-width:118px;}
   input[type=color]{
     width:30px; height:24px; padding:0; border:1px solid #b9d3f0;
     border-radius:5px; background:#fff; cursor:pointer;
@@ -299,11 +302,16 @@
     </select>
     <button id="resetBtn" type="button">색 초기화</button>
   </div>
+  <div class="grp">
+    <span class="save-state" id="saveState">자동 저장 준비 중…</span>
+    <button id="resetAllBtn" class="danger" type="button">전체 초기화</button>
+  </div>
 </div>
 <div class="hint">
   글자는 클릭해서 바로 고치면 되고, 드래그로 선택하면 색칠 툴바가 뜹니다<br>
   사진은 드래그로 위치 이동 / 휠로 확대·축소 / <b>더블클릭하면 다른 사진으로 교체</b><br>
-  스티커는 왼쪽 위 ✥ 손잡이를 끌어서 옮깁니다
+  스티커는 왼쪽 위 ✥ 손잡이를 끌어서 옮깁니다<br>
+  작성한 내용은 이 브라우저에 자동 저장돼요 · 처음 상태로 돌리려면 <b>전체 초기화</b>
 </div>
 
 <!-- ══════════ 스테이지 ══════════ -->
@@ -458,6 +466,25 @@ stage.addEventListener('paste', e => {
   document.execCommand('insertText', false, text);
 });
 
+/* 큰 사진은 긴 변 1600px로 줄여서 넣는다. 저장 이미지(최대 2배율)에는 충분하고
+   자동 저장 용량과 html2canvas 속도를 아낄 수 있다. 투명 PNG는 PNG 그대로 둠 */
+function shrinkImage(dataUrl, type){
+  return new Promise(resolve => {
+    const im = new Image();
+    im.onload = () => {
+      const MAX = 1600, w = im.naturalWidth, h = im.naturalHeight;
+      const k = MAX / Math.max(w, h);
+      if (!(k < 1)) return resolve(dataUrl);          // 이미 작거나 크기를 모르면(SVG) 그대로
+      const cv = document.createElement('canvas');
+      cv.width = Math.round(w * k); cv.height = Math.round(h * k);
+      cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height);
+      resolve(type === 'image/jpeg' ? cv.toDataURL('image/jpeg', 0.9) : cv.toDataURL('image/png'));
+    };
+    im.onerror = () => resolve(dataUrl);
+    im.src = dataUrl;
+  });
+}
+
 /* ══════════════════════════════════════════════
    1. 이미지 프레임 (드래그 이동 + 휠 확대/축소)
    ══════════════════════════════════════════════ */
@@ -500,29 +527,37 @@ function makeFrame(frameEl, phText){
       `translate(-50%,-50%) translate(${st.x}px, ${st.y}px) scale(${st.s})`;
   }
 
-  /* 프레임을 꽉 채우도록 최초 배율 계산 */
-  function fit(){
+  /* 프레임을 꽉 채우도록 기본 크기 계산. keep이면 저장해 둔 위치·배율을 유지 */
+  function fit(keep){
     const fw = frameEl.clientWidth, fh = frameEl.clientHeight;
     const iw = img.naturalWidth, ih = img.naturalHeight;
     if (!iw || !ih) return;
     const base = Math.max(fw/iw, fh/ih);
     img.style.width  = (iw*base) + 'px';
     img.style.height = (ih*base) + 'px';
-    st.x = st.y = 0; st.s = 1;
+    if (!keep) { st.x = st.y = 0; st.s = 1; }
     apply();
   }
+
+  /* 사진 넣기 — 파일로 올릴 때와 저장본을 되살릴 때 모두 여기로 온다.
+     되살릴 때는 위치·배율을 onload 전에 먼저 채워 둬서, 그 사이에 자동 저장이
+     돌더라도 기본값(0,0,1)으로 덮어쓰지 않게 함 */
+  function setImage(src, saved){
+    if (!img) { img = document.createElement('img'); frameEl.appendChild(img); }
+    frameEl.classList.remove('empty');
+    ph.style.display = 'none';
+    if (saved) { st.x = saved.x || 0; st.y = saved.y || 0; st.s = saved.s || 1; }
+    img.onload = () => fit(!!saved);
+    img.src = src;
+  }
+  frameEl._getImg = () => img ? { src: img.src, x: st.x, y: st.y, s: st.s } : null;
+  frameEl._load   = d => { if (d && d.src) setImage(d.src, d); };
 
   input.addEventListener('change', e => {
     const file = e.target.files[0];
     if (!file) return;
     const fr = new FileReader();
-    fr.onload = ev => {
-      if (!img) { img = document.createElement('img'); frameEl.appendChild(img); }
-      img.onload = fit;
-      img.src = ev.target.result;
-      frameEl.classList.remove('empty');
-      ph.style.display = 'none';
-    };
+    fr.onload = async ev => setImage(await shrinkImage(ev.target.result, file.type));
     fr.readAsDataURL(file);
     input.value = '';
   });
@@ -975,46 +1010,196 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
 });
 
 /* ══════════════════════════════════════════════
-   10. 초기 내용 — 올려주신 이미지 그대로
+   10. 초기 내용 (저장본이 없을 때만 씀)
    ══════════════════════════════════════════════ */
-addBlk('닉네임');
-addSep();
-addBlk('간단한 소개를 적어주세요<br>계정 설명, 연령, 성향 등등');
-addBlk('NG · 지뢰 사항을<br>적어주세요');
-addBlk('문의 · 연락 안내를<br>적어주세요');
+function buildDefaults(){
+  addBlk('닉네임');
+  addSep();
+  addBlk('간단한 소개를 적어주세요<br>계정 설명, 연령, 성향 등등');
+  addBlk('NG · 지뢰 사항을<br>적어주세요');
+  addBlk('문의 · 연락 안내를<br>적어주세요');
 
-addLegend('c1', '최애');
-addLegend('c2', 'NG');
+  addLegend('c1', '최애');
+  addLegend('c2', 'NG');
 
-addSection('<span class="hl c1">[분류명]</span>', [
-  '여기에는 캐릭터, 페어, 장르를 넣어주세요',
-  '작품명 / 장르 - <span class="hl c1">캐릭터명</span>',
-  '작품명 / 장르 - <span class="hl c2">캐릭터명</span>'
-]);
-addSection('Loading...☆★', ['안내 문구를 적어주세요']);
+  addSection('<span class="hl c1">[분류명]</span>', [
+    '여기에는 캐릭터, 페어, 장르를 넣어주세요',
+    '작품명 / 장르 - <span class="hl c1">캐릭터명</span>',
+    '작품명 / 장르 - <span class="hl c2">캐릭터명</span>'
+  ]);
+  addSection('Loading...☆★', ['안내 문구를 적어주세요']);
 
-addChar({
-  src:'[최애]',
-  desc:'작품명 - <span class="hl c1">캐릭터명</span>',
-  note:'(메모)'
-});
-addChar({
-  src:'[최애커플]',
-  desc:'작품명 - <span class="hl c2">캐릭터명</span>',
-  note:''
-});
-addChar({
-  src:'[최근관심사]',
-  desc:'작품명 - <span class="hl c1">캐릭터명</span>',
-  note:''
-});
+  addChar({ src:'[최애]',       desc:'작품명 - <span class="hl c1">캐릭터명</span>', note:'(메모)' });
+  addChar({ src:'[최애커플]',   desc:'작품명 - <span class="hl c2">캐릭터명</span>', note:'' });
+  addChar({ src:'[최근관심사]', desc:'작품명 - <span class="hl c1">캐릭터명</span>', note:'' });
+}
 
 /* 왼쪽 프로필 사진 — 위치·크기는 고정, 안쪽 사진만 드래그/휠로 조절 */
 makeFrame(document.getElementById('profile'), '프로필<br>사진');
 
-applyColors();
-applyPerRow();
-applyZoom();
+/* ══════════════════════════════════════════════
+   11. 자동 저장 — 이 브라우저의 IndexedDB에 한 덩어리로 보관
+   사진(data URL)이 들어가면 localStorage(약 5MB)는 금방 넘쳐서 IndexedDB를 씀.
+   브라우저마다 따로 저장되고 다른 사람과는 공유되지 않음
+   ══════════════════════════════════════════════ */
+const DB_NAME = 'maintweet-v2', DB_STORE = 'kv', DB_KEY = 'state';
+let dbPromise = null;
+function openDb(){
+  if (!dbPromise) dbPromise = new Promise((res, rej) => {
+    const r = indexedDB.open(DB_NAME, 1);
+    r.onupgradeneeded = () => r.result.createObjectStore(DB_STORE);
+    r.onsuccess = () => res(r.result);
+    r.onerror   = () => rej(r.error);
+  });
+  return dbPromise;
+}
+async function dbRun(mode, fn){
+  const db = await openDb();
+  return new Promise((res, rej) => {
+    const tx  = db.transaction(DB_STORE, mode);
+    const req = fn(tx.objectStore(DB_STORE));
+    tx.oncomplete = () => res(req.result);
+    tx.onerror = tx.onabort = () => rej(tx.error);
+  });
+}
+const loadState  = () => dbRun('readonly',  st => st.get(DB_KEY));
+const writeState = v  => dbRun('readwrite', st => st.put(v, DB_KEY));
+const clearState = () => dbRun('readwrite', st => st.delete(DB_KEY));
+
+const innerOf = (el, sel) => el.querySelector(sel).innerHTML;
+const imgOf   = el => (el && el._getImg) ? el._getImg() : null;
+
+/* 화면 → 저장용 객체. 사진은 위치·배율까지 함께 */
+function serialize(){
+  const settings = {};
+  Object.keys(pickers).forEach(k => settings[k] = pickers[k].value);
+  Object.assign(settings, {
+    dotSize: dotSize.value, dotGap: dotGap.value,
+    font: fontSel.value, zoom: zoomSel.value, perRow: perRowSel.value
+  });
+  return {
+    v: 1,
+    settings,
+    profile: imgOf(document.getElementById('profile')),
+    info: [...infoItems.children].map(w => {
+      const b = w.querySelector('.blk');
+      return b ? { t:'blk', html:b.innerHTML } : { t:'sep' };
+    }),
+    deco: innerOf(document, '.deco'),
+    legend: [...legend.querySelectorAll('.lg-item')].map(it => ({
+      c: ['c1','c2','c3'].find(c => it.querySelector('.sw').classList.contains(c)) || 'c1',
+      html: innerOf(it, '.lg-txt')
+    })),
+    sections: [...sections.querySelectorAll('.section')].map(sec => ({
+      title: innerOf(sec, '.sec-title'),
+      lines: [...sec.querySelectorAll('.line-txt')].map(l => l.innerHTML)
+    })),
+    chars: [...chars.querySelectorAll('.char')].map(c => ({
+      src: innerOf(c, '.src'), desc: innerOf(c, '.desc'), note: innerOf(c, '.note'),
+      img: imgOf(c.querySelector('.avatar'))
+    })),
+    stickers: [...stage.querySelectorAll('.sticker')].map(el => ({
+      x: el.offsetLeft, y: el.offsetTop,
+      w: parseFloat(el.style.width) || el.offsetWidth,
+      img: imgOf(el.querySelector('.inner'))
+    }))
+  };
+}
+
+/* 저장용 객체 → 화면 */
+function restoreState(d){
+  const S = d.settings || {};
+  Object.keys(pickers).forEach(k => { if (S[k]) pickers[k].value = S[k]; });
+  if (S.dotSize) dotSize.value = S.dotSize;
+  if (S.dotGap)  dotGap.value  = S.dotGap;
+  if (S.font) { fontSel.value = S.font; root.style.setProperty('--font', "'" + fontSel.value + "'"); }
+  if (S.zoom)    zoomSel.value   = S.zoom;
+  if (S.perRow)  perRowSel.value = S.perRow;
+
+  document.getElementById('profile')._load(d.profile);
+  (d.info || []).forEach(it => it.t === 'sep' ? addSep() : addBlk(it.html));
+  if (d.deco != null) document.querySelector('.deco').innerHTML = d.deco;
+  (d.legend   || []).forEach(l => addLegend(l.c, l.html));
+  (d.sections || []).forEach(sec => addSection(sec.title, sec.lines));
+  (d.chars    || []).forEach(c => addChar(c).querySelector('.avatar')._load(c.img));
+  (d.stickers || []).forEach(k => addSticker(k.x, k.y, k.w).querySelector('.inner')._load(k.img));
+  select(null);
+}
+
+/* 복원 도중 깨지면 반쯤 만들어진 걸 치우고 기본값으로 */
+function clearContent(){
+  infoItems.innerHTML = '';
+  legend.querySelectorAll('.lg-item').forEach(e => e.remove());
+  sections.innerHTML = '';
+  chars.innerHTML = '';
+  stage.querySelectorAll('.sticker').forEach(e => e.remove());
+}
+
+const saveStateEl = document.getElementById('saveState');
+let saveTimer = null, autosave = false;
+
+function scheduleSave(){
+  if (!autosave) return;
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveNow, 400);
+}
+async function saveNow(){
+  saveTimer = null;
+  if (!autosave) return;
+  try {
+    await writeState(serialize());
+    const t = new Date(), p = n => String(n).padStart(2, '0');
+    saveStateEl.textContent = '✓ 자동 저장됨 ' + p(t.getHours()) + ':' + p(t.getMinutes());
+  } catch (err) {
+    saveStateEl.textContent = '⚠ 저장 실패 (저장공간 확인)';
+  }
+}
+
+/* 글 수정·칸 추가/삭제·색칠·사진 이동/확대·스티커 이동은 전부 스테이지의 DOM 변화로 잡힘 */
+new MutationObserver(scheduleSave)
+  .observe(stage, { subtree:true, childList:true, characterData:true, attributes:true });
+/* 색·도트 슬라이더·폰트·보기 배율·한 줄 칸 수 */
+document.addEventListener('input',  scheduleSave, true);
+document.addEventListener('change', scheduleSave, true);
+/* 마지막 수정 후 400ms 안에 탭을 닫아도 남도록 */
+window.addEventListener('pagehide', () => {
+  if (saveTimer) { clearTimeout(saveTimer); saveNow(); }
+});
+
+document.getElementById('resetAllBtn').addEventListener('click', async () => {
+  if (!confirm('작성한 글, 사진, 색·배치 설정이 모두 지워지고 처음 상태로 돌아갑니다.\n계속할까요?')) return;
+  autosave = false;                 // 지우는 사이에 다시 저장되지 않게
+  clearTimeout(saveTimer);
+  try { await clearState(); } catch (err) {}
+  location.reload();
+});
+
+/* ══════════════════════════════════════════════
+   12. 시작
+   ══════════════════════════════════════════════ */
+(async () => {
+  let saved = null, dbOk = true;
+  try { saved = await loadState(); }
+  catch (err) {
+    dbOk = false;
+    saveStateEl.textContent = '⚠ 이 브라우저에선 자동 저장을 쓸 수 없어요';
+  }
+
+  if (saved && saved.v === 1) {
+    try { restoreState(saved); }
+    catch (err) { clearContent(); buildDefaults(); }
+  } else {
+    buildDefaults();
+  }
+
+  applyColors();
+  applyPerRow();
+  applyZoom();
+
+  /* 복원을 다 끝낸 다음부터 저장을 켠다 */
+  autosave = dbOk;
+  if (dbOk) saveStateEl.textContent = saved ? '✓ 저장본 불러옴' : '자동 저장 켜짐';
+})();
 </script>
 </body>
 </html>
