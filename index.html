@@ -528,6 +528,7 @@ function makeFrame(frameEl, phText){
   }
 
   /* 프레임을 꽉 채우도록 기본 크기 계산. keep이면 저장해 둔 위치·배율을 유지 */
+  let fitW = 0, fitH = 0;              // 사진 크기를 마지막으로 맞췄을 때의 프레임 크기
   function fit(keep){
     const fw = frameEl.clientWidth, fh = frameEl.clientHeight;
     const iw = img.naturalWidth, ih = img.naturalHeight;
@@ -536,8 +537,21 @@ function makeFrame(frameEl, phText){
     img.style.width  = (iw*base) + 'px';
     img.style.height = (ih*base) + 'px';
     if (!keep) { st.x = st.y = 0; st.s = 1; }
+    fitW = fw; fitH = fh;
     apply();
   }
+
+  /* 프레임 크기가 바뀌면(스티커 크기 조절, '4칸'으로 캐릭터 칸 축소 등) 사진도 같은 비율로
+     다시 맞춘다. 전에는 처음 넣을 때 크기로 고정돼 있다가 새로고침·재접속 때만 새 크기로
+     다시 계산돼서, 편집하던 모습과 나중에 저장한 그림 크기가 달라졌다 */
+  new ResizeObserver(() => {
+    if (!img || !img.naturalWidth || !fitW) return;
+    const fw = frameEl.clientWidth, fh = frameEl.clientHeight;
+    if (fw === fitW && fh === fitH) return;
+    st.x *= fw / fitW;                 // 끌어서 옮긴 거리도 같은 비율로 → 구도가 그대로 유지됨
+    st.y *= fh / fitH;
+    fit(true);
+  }).observe(frameEl);
 
   /* 사진 넣기 — 파일로 올릴 때와 저장본을 되살릴 때 모두 여기로 온다.
      되살릴 때는 위치·배율을 onload 전에 먼저 채워 둬서, 그 사이에 자동 저장이
