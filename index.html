@@ -70,7 +70,9 @@
   .stage-wrap{overflow:auto; max-width:100%; padding:4px;}
   .zoomer{transform-origin:top left;}
   .stage{
-    position:relative; width:1200px; min-height:900px;
+    /* 높이는 내용에 맞춰짐(스티커가 내용 아래로 가면 fitStageToStickers가 늘림).
+       밖으로 삐져나간 부분은 저장 이미지처럼 편집 화면에서도 잘라서 보여줌 */
+    position:relative; width:1200px; overflow:hidden;
     background-color:var(--bg); background-repeat:repeat;
     padding:46px 50px; display:flex; align-items:flex-start; gap:44px;
     font-family:var(--font),'Galmuri11',monospace; color:var(--ink);
@@ -85,11 +87,9 @@
   .stage.capturing [contenteditable]:hover,
   .stage.capturing [contenteditable]:focus{background:transparent;}
   .stage.capturing .ui-only{display:none !important;}
-  /* 저장할 때는 편집용 버튼들이 사라져 내용이 짧아지는데, min-height 900px이 남아
-     아래쪽에 빈 배경이 길게 붙었다. 저장 시에는 내용 높이에 맞춰 잘리게 함 */
-  .stage.capturing{min-height:0;}
-  /* 비워둔 칸의 안내 문구(문구/내용을 입력하세요…)가 저장 이미지에 찍히지 않게 */
-  .stage.capturing [contenteditable]:empty:before{content:"";}
+  /* 비워둔 칸의 안내 문구는 저장 이미지에 안 보이게 — 단 글자를 지우면 줄 높이가 0으로
+     접혀 아래 내용이 당겨지므로, 투명하게만 해서 편집 화면과 같은 높이를 유지 */
+  .stage.capturing [contenteditable]:empty:before{color:transparent;}
   .stage.capturing .frame.empty{border-color:transparent; background:transparent;}
   .stage.capturing .frame.empty .ph{display:none;}
 
@@ -108,7 +108,8 @@
   }
   .info-box{
     width:100%; background:#ffffff;
-    border:2px dashed var(--line-soft); border-radius:4px; padding:26px 20px; text-align:center;
+    border:2px dashed var(--line-soft); border-radius:4px; padding:26px 20px 30px; text-align:center;
+    position:relative;
   }
   .info-box .sep{border:0; border-top:1px solid var(--line-soft); margin:0 6px;}
   .info-box .blk{margin:0;}
@@ -137,10 +138,11 @@
      SVG를 따로 그려서 currentColor를 물려받지 못하기 때문) */
   .ic{width:20px; height:20px; display:block; flex:0 0 auto; user-select:none;}
   .win-foot .ic{width:21px; height:21px;}
-  .win-body{padding:18px 26px 22px;}
+  .win-body{padding:18px 26px 22px; position:relative;}
 
   /* 범례 */
-  .legend{display:flex; flex-wrap:wrap; align-items:flex-start; gap:12px 26px; padding:2px 0 14px;}
+  .legend{display:flex; flex-wrap:wrap; align-items:flex-start; gap:12px 26px; padding:2px 0 26px;
+          position:relative;}
   .deco{flex:1 1 180px; min-width:140px; color:var(--line); font-size:14px; word-break:break-all;}
   .lg-item{display:flex; align-items:flex-start; gap:10px; position:relative;}
   .lg-item .sw{width:56px; height:20px; border-radius:3px; flex:0 0 56px; margin-top:4px;}
@@ -154,8 +156,8 @@
   hr.divider{border:0; border-top:2px solid var(--line); margin:16px 0;}
 
   /* 섹션 / 줄 */
-  .section{margin-bottom:20px; position:relative;}
-  .section:last-of-type{margin-bottom:0;}
+  /* 마지막 섹션도 같은 여백 — 그 여백 위에 ＋줄 / ＋섹션 버튼이 뜬다 */
+  .section{margin-bottom:26px; position:relative;}
   .sec-title{font-size:14px;}
   .line{position:relative; padding-right:30px;}
   .line .row-ui{position:absolute; top:3px; right:0; display:none;}
@@ -173,7 +175,17 @@
     background:#fff; border:1px solid var(--line); color:var(--line);
     font-family:'Galmuri11',monospace;
   }
-  .adder{margin-top:8px;}
+  /* 편집 버튼(＋줄/＋섹션/＋범례/＋칸/＋캐릭터 추가)은 흐름 밖(absolute)에 두고 이미 있는
+     여백 위에 띄운다. 저장 때 숨겨도 아무것도 움직이지 않아서 편집 화면 = 저장 이미지 */
+  .adder{position:absolute; z-index:5; white-space:nowrap;}
+  .section > .adder{left:0; bottom:-23px;}
+  .sections-wrap{position:relative;}
+  .sec-add{left:46px; bottom:-23px;}                 /* 마지막 섹션 ＋줄 옆 같은 줄 */
+  #sections:empty{height:28px;}                     /* 섹션이 하나도 없을 때 버튼 자리 */
+  #sections:empty + .sec-add{left:0; bottom:5px;}
+  .lg-add{left:0; bottom:4px;}
+  .info-add{left:0; right:0; bottom:6px; text-align:center;}
+  .chars-add{left:0; right:0; bottom:2px; text-align:center;}
   .adder .lbl{font-family:'Galmuri11',monospace; font-size:10px; color:var(--line); margin-left:12px;}
 
   /* ───────── 캐릭터 카드 ───────── */
@@ -324,7 +336,7 @@
     <div class="profile" id="profile"></div>
     <div class="info-box">
       <div id="infoItems"></div>
-      <div class="adder ui-only" style="margin-top:14px;">
+      <div class="adder ui-only info-add">
         <button class="mini" id="addBlkBtn" type="button">＋ 칸</button>
         <button class="mini" id="addSepBtn" type="button">＋ 구분선</button>
       </div>
@@ -356,23 +368,24 @@
       <!-- 범례 -->
       <div class="legend" id="legend">
         <div class="deco" contenteditable="true" data-ph="장식 문구">(3 づ)3 ≡ •°｡*+°｡*+°｡ ▯▮▯▮▯▮</div>
-      </div>
-      <div class="adder ui-only" style="margin:-8px 0 10px;">
-        <button class="mini" id="addLgBtn2" type="button">＋ 범례</button>
+        <div class="adder ui-only lg-add">
+          <button class="mini" id="addLgBtn2" type="button">＋ 범례</button>
+        </div>
       </div>
 
       <!-- 섹션들 -->
-      <div id="sections"></div>
-
-      <div class="adder ui-only">
-        <button class="mini" id="addSecBtn2" type="button">＋ 섹션</button>
+      <div class="sections-wrap">
+        <div id="sections"></div>
+        <div class="adder ui-only sec-add">
+          <button class="mini" id="addSecBtn2" type="button">＋ 섹션</button>
+        </div>
       </div>
 
       <hr class="divider">
 
       <!-- 캐릭터 -->
       <div class="chars" id="chars"></div>
-      <div class="adder ui-only" style="text-align:center;">
+      <div class="adder ui-only chars-add">
         <button class="mini" id="addCharBtn2" type="button">＋ 캐릭터 추가</button>
         <span class="lbl">한 줄에</span>
         <select class="mini-sel" id="perRowSel">
@@ -770,7 +783,9 @@ function addSticker(x, y, w){
   const inner = st.querySelector('.inner');
   makeFrame(inner, 'PNG');
 
-  st.querySelector('.st-del').addEventListener('click', e => { e.stopPropagation(); st.remove(); });
+  st.querySelector('.st-del').addEventListener('click', e => {
+    e.stopPropagation(); st.remove(); fitStageToStickers();
+  });
 
   /* 스티커 이동: 왼쪽 위 ✥ 손잡이를 끌거나, Alt + 아무데나 드래그.
      (프레임 안쪽 그냥 드래그는 사진 위치 조절이라 겹치지 않게 나눠 둠) */
@@ -788,8 +803,10 @@ function addSticker(x, y, w){
   window.addEventListener('mousemove', e => {
     if (!mv) return;
     const z = curZoom();
-    st.style.left = (ml + (e.clientX - mx) / z) + 'px';
-    st.style.top  = (mt + (e.clientY - my) / z) + 'px';
+    /* 캔버스 밖으로 나가 잃어버리지 않게 (오른쪽은 손잡이 폭만큼은 남김) */
+    st.style.left = Math.min(Math.max(ml + (e.clientX - mx) / z, 0), 1200 - 30) + 'px';
+    st.style.top  = Math.max(mt + (e.clientY - my) / z, 0) + 'px';
+    fitStageToStickers();
   });
   window.addEventListener('mouseup', () => { mv = false; });
 
@@ -807,11 +824,13 @@ function addSticker(x, y, w){
     const nw = Math.min(Math.max(sw0 + d, 40), 700);
     st.style.width = nw + 'px';
     st.style.height = nw + 'px';
+    fitStageToStickers();
   });
   window.addEventListener('mouseup', () => { rs = false; });
 
   st.addEventListener('click', () => select(st));
   select(st);
+  fitStageToStickers();
   return st;
 }
 
@@ -823,6 +842,17 @@ function select(st){
 document.addEventListener('click', e => {
   if (!e.target.closest('.sticker')) select(null);
 });
+
+/* 스티커는 absolute라 스테이지 높이를 늘려주지 않는다. 내용 아래에 둔 스티커가
+   편집 화면·저장 이미지 모두에서 잘리지 않도록, 가장 아래 스티커 + 하단 여백(46px)까지
+   캔버스를 늘린다 */
+function fitStageToStickers(){
+  let bottom = 0;
+  stage.querySelectorAll('.sticker').forEach(el => {
+    bottom = Math.max(bottom, el.offsetTop + el.offsetHeight);
+  });
+  stage.style.minHeight = bottom ? (bottom + 46) + 'px' : '';
+}
 
 /* ══════════════════════════════════════════════
    6. 색칠 툴바
@@ -962,6 +992,11 @@ function applyZoom(){
 }
 zoomSel.addEventListener('change', applyZoom);
 window.addEventListener('resize', applyZoom);
+/* 스테이지 높이가 내용(줄·캐릭터 추가, 스티커)에 따라 바뀌므로 배율 박스도 따라가게.
+   저장 중에는 배율을 풀어 둔 상태라 건드리지 않음 */
+new ResizeObserver(() => {
+  if (!stage.classList.contains('capturing')) applyZoom();
+}).observe(stage);
 
 /* ══════════════════════════════════════════════
    8. 버튼 연결
@@ -997,6 +1032,7 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
   btn.disabled = true;
   btn.textContent = '저장 중...';
   select(null);
+  fitStageToStickers();
   hlbar.style.display = 'none';
   stage.classList.add('capturing');
   zoomer.style.transform = 'none';
@@ -1138,6 +1174,7 @@ function restoreState(d){
   (d.chars    || []).forEach(c => addChar(c).querySelector('.avatar')._load(c.img));
   (d.stickers || []).forEach(k => addSticker(k.x, k.y, k.w).querySelector('.inner')._load(k.img));
   select(null);
+  fitStageToStickers();
 }
 
 /* 복원 도중 깨지면 반쯤 만들어진 걸 치우고 기본값으로 */
@@ -1147,6 +1184,7 @@ function clearContent(){
   sections.innerHTML = '';
   chars.innerHTML = '';
   stage.querySelectorAll('.sticker').forEach(e => e.remove());
+  stage.style.minHeight = '';
 }
 
 const saveStateEl = document.getElementById('saveState');
